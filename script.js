@@ -9,7 +9,7 @@ const floatParticles = [];
 const burstParticles = [];
 
 const FLOAT_COUNT = 140;
-const BURST_COUNT = 140;
+const BURST_COUNT = 180;
 
 const colors = [
     "#3b82f6",
@@ -20,86 +20,92 @@ const colors = [
     "#1d4ed8"
 ];
 
-// Adapter le canvas à la taille de l'écran
+
+// ================================
+// TAILLE DU CANVAS
+// ================================
+
 function resizeCanvas() {
-    width = canvas.width = window.innerWidth;
-    height = canvas.height = window.innerHeight;
+    width = window.innerWidth;
+    height = window.innerHeight;
+
+    canvas.width = width;
+    canvas.height = height;
 }
 
 window.addEventListener("resize", resizeCanvas);
+
 resizeCanvas();
 
 
 // ================================
-// PARTICULES FLOTTANTES
+// PARTICULE
 // ================================
 
 class Particle {
 
     constructor(x, y, type) {
+
         this.x = x;
         this.y = y;
 
         this.type = type;
 
-        this.size = Math.random() * 3 + 1;
-
         this.color =
             colors[Math.floor(Math.random() * colors.length)];
 
-        this.alpha = Math.random() * 0.7 + 0.3;
+        this.size = Math.random() * 2.5 + 1;
 
+        this.alpha = 1;
+
+
+        // Particules flottantes
         if (type === "float") {
 
-            this.speedX = (Math.random() - 0.5) * 0.5;
-            this.speedY = (Math.random() - 0.5) * 0.5;
+            this.speedX =
+                (Math.random() - 0.5) * 0.4;
 
-            this.maxLife = Math.random() * 500 + 300;
-            this.life = Math.random() * this.maxLife;
+            this.speedY =
+                (Math.random() - 0.5) * 0.4;
+        }
 
-        } else {
 
-            this.speedX = 0;
-            this.speedY = 0;
+        // Particules du cœur
+        if (type === "burst") {
 
-            this.life = 0;
-            this.maxLife = 100;
+            this.speedX =
+                (Math.random() - 0.5) * 0.5;
+
+            this.speedY =
+                (Math.random() - 0.5) * 0.5;
         }
     }
 
 
     update() {
 
-        // Particules qui flottent
+        this.x += this.speedX;
+        this.y += this.speedY;
+
+
+        // Particules flottantes
         if (this.type === "float") {
 
-            this.x += this.speedX;
-            this.y += this.speedY;
-
-            this.life++;
-
-            // Réapparaît de l'autre côté
             if (this.x < 0) this.x = width;
             if (this.x > width) this.x = 0;
 
             if (this.y < 0) this.y = height;
             if (this.y > height) this.y = 0;
-
         }
 
 
         // Particules du cœur
         if (this.type === "burst") {
 
-            this.x += this.speedX;
-            this.y += this.speedY;
+            this.alpha -= 0.015;
 
             this.speedX *= 0.98;
             this.speedY *= 0.98;
-
-            this.life++;
-
-            this.alpha -= 0.008;
         }
     }
 
@@ -111,6 +117,9 @@ class Particle {
         ctx.globalAlpha = this.alpha;
 
         ctx.fillStyle = this.color;
+
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = this.color;
 
         ctx.beginPath();
 
@@ -130,26 +139,23 @@ class Particle {
 
 
 // ================================
-// CRÉATION DES PARTICULES
+// PARTICULES FLOTTANTES
 // ================================
 
-function createFloatingParticles() {
+for (let i = 0; i < FLOAT_COUNT; i++) {
 
-    for (let i = 0; i < FLOAT_COUNT; i++) {
-
-        const particle = new Particle(
+    floatParticles.push(
+        new Particle(
             Math.random() * width,
             Math.random() * height,
             "float"
-        );
-
-        floatParticles.push(particle);
-    }
+        )
+    );
 }
 
 
 // ================================
-// EXPLOSION EN FORME DE CŒUR
+// CRÉER UN CŒUR
 // ================================
 
 function spawnHeartBurst(x, y) {
@@ -159,7 +165,8 @@ function spawnHeartBurst(x, y) {
         const t =
             Math.random() * Math.PI * 2;
 
-        // Formule mathématique d'un cœur
+
+        // Formule du cœur
         const heartX =
             16 * Math.pow(Math.sin(t), 3);
 
@@ -171,7 +178,7 @@ function spawnHeartBurst(x, y) {
 
 
         const scale =
-            Math.random() * 3 + 2;
+            Math.random() * 2.5 + 3;
 
 
         const particle =
@@ -185,16 +192,8 @@ function spawnHeartBurst(x, y) {
             y - heartY * scale;
 
 
-        // Petite dispersion
-        particle.speedX =
-            (Math.random() - 0.5) * 0.8;
-
-        particle.speedY =
-            (Math.random() - 0.5) * 0.8;
-
-
         particle.size =
-            Math.random() * 2.5 + 1;
+            Math.random() * 2 + 1;
 
 
         burstParticles.push(particle);
@@ -203,10 +202,12 @@ function spawnHeartBurst(x, y) {
 
 
 // ================================
-// CLIC
+// CLIC SUR L'ÉCRAN
 // ================================
 
-canvas.addEventListener("click", (event) => {
+canvas.addEventListener("click", function(event) {
+
+    console.log("Clic détecté !");
 
     spawnHeartBurst(
         event.clientX,
@@ -238,7 +239,7 @@ function animate() {
     }
 
 
-    // Particules du cœur
+    // Cœurs
     for (let i = burstParticles.length - 1; i >= 0; i--) {
 
         const particle =
@@ -248,7 +249,6 @@ function animate() {
         particle.draw();
 
 
-        // Supprimer les particules
         if (particle.alpha <= 0) {
 
             burstParticles.splice(i, 1);
@@ -259,8 +259,6 @@ function animate() {
     requestAnimationFrame(animate);
 }
 
-
-// Démarrage
-createFloatingParticles();
 animate();
 ```
+
